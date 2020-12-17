@@ -24,9 +24,6 @@ def memoize(j, solution):
 	print('memo', j, '=', solution)
 	return solution
 
-# 6908379398144 close
-# 12089663946752 also close wtf
-# 5181284548608 not it
 
 if __name__ == '__main__':
 	with open("input.txt", "r") as file:
