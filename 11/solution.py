@@ -1,44 +1,39 @@
 from copy import deepcopy
 
-def evolve(A, n, m, C):
-	B = deepcopy(A)
+def evolve(A, C, q, n, m):
 	D = deepcopy(C)
-	for i in range(n):  	# row
-		for j in range(m):	# col
-			state = A[i][j]
-			if state == '.':
-				continue
-			else:
-				if state == 'L' and C[i][j] == 0:
-					B[i][j] = '#'
-					for x in range(min(i-1, 0), max(i+1, n-1)):
-						for y in range(min(j-1, 0), max(j+1, m)):
-							if x != i and y != j:
-								D[i][j] += 1
-				elif state == '#' and C[i][j] >= 4:
-					B[i][j] = 'L'
-					for x in range(min(i-1, 0), max(i+1, n-1)):
-						for y in range(min(j-1, 0), max(j+1, m)):
-							if x != i and y != j:
-								D[i][j] -= 1
-	return B, D
+	qq = set()
+	for (i, j) in q:
+		state = A[i][j]
+		if state == '.':
+			continue
+		else:
+			if state == 'L' and C[i][j] == 0:
+				A[i][j] = '#'
+				qq.add((i, j))
+				for x in range(max(i-1, 0), min(i+2, n)):
+					for y in range(max(j-1, 0), min(j+2, m)):
+						if not (x==i and y==j):
+							D[x][y] += 1
+							qq.add((x, y))
+			elif state == '#' and C[i][j] >= 4:
+				A[i][j] = 'L'
+				qq.add((i, j))
+				for x in range(max(i-1, 0), min(i+2, n)):
+					for y in range(max(j-1, 0), min(j+2, m)):
+						if not (x==i and y==j):
+							D[x][y] -= 1
+							qq.add((x, y))
+	return D, qq
 
 
-def generate_init_count(A, n, m):
-	C = [[-1 for mm in range(m)] for nn in range(n)]
-	for i in range(n):
-		for j in range(m):
-			state = A[i][j]
-			if state == '.':
-				C[i][j] = 0
-			else:
-				adj_seats = 0				
-				for x in range(min(i-1, 0), max(i+1, n-1)):
-					for y in range(min(j-1, 0), max(j+1, m)):
-						if x != i and y != j and A[x][y] == '#':
-							adj_seats += 1
-				C[i][j] = adj_seats
-	return C
+def printM(M, name):
+	print(name + ':')
+	for row in M:
+		l=''
+		for c in row:
+			l+=str(c)
+		print(l)
 
 
 with open("input.txt", "r") as file:
@@ -48,19 +43,27 @@ with open("input.txt", "r") as file:
 		matrix.append([c for c in line.strip()])
 	n = len(matrix)		# 93
 	m = len(matrix[0])	# 94
-	counts = generate_init_count(matrix, n, m)
+	counts = [[0 for mm in range(m)] for nn in range(n)]  # 1st gen no occupied seats
+	# positions to inspect
+	queue = set()
+	for i in range(n):
+		for j in range(m):
+			queue.add((i, j))
+
 	gen_count = 0
-	while True:
-		print('round', gen_count)
-		next_gen, next_counts = evolve(matrix, n, m, counts)
+	while len(queue) > 0:
+		print('round', gen_count, 'qq size', len(queue))
+		next_counts, next_queue = evolve(matrix, counts, queue, n, m)
 		gen_count += 1
-		if next_gen == matrix:
-			final_count = 0
-			for row in matrix:
-				for c in row:
-					if c == '#':
-						final_count += 1
-			print('final_count', final_count)
-			break
-		matrix = next_gen
+		# printM(matrix, 'matrix')
+		# printM(next_counts, 'next counts')
 		counts = next_counts
+		queue = next_queue
+
+	if len(next_queue) == 0:
+		final_count = 0
+		for row in matrix:
+			for c in row:
+				if c == '#':
+					final_count += 1
+		print('final_count', final_count)
